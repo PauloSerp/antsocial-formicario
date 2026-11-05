@@ -35,6 +35,7 @@ h2:first-child{margin-top:2px}
 .card{display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:center;padding:8px;border:1px solid var(--linha);border-radius:12px;margin-bottom:8px;background:#fff;cursor:grab;user-select:none;touch-action:none;transition:box-shadow .15s,border-color .15s}
 .card:hover{border-color:#cdbfa9;box-shadow:0 2px 10px rgba(80,60,30,.08)}
 .card svg{width:62px;height:62px}
+.card.kit svg{width:62px;height:42px;background:#f6efe4;border-radius:8px}
 .card .n{font-weight:800;font-size:14px;line-height:1.15}
 .card .d{font-size:11.5px;color:var(--suave);margin:2px 0 3px;line-height:1.25}
 .card .p{font-weight:800;color:var(--marrom);font-size:14px}
@@ -125,6 +126,7 @@ nav.abas button.on{background:#fff;color:var(--verde);box-shadow:0 1px 4px rgba(
       <span class="sep"></span>
       <label class="chk"><input type="checkbox" id="cTampa" checked> Tampas de acrílico</label>
       <span style="flex:1"></span>
+      <button class="btn" id="bDesfazer" disabled>↶ Desfazer</button>
       <button class="btn" id="bExemplo">Exemplo</button>
       <button class="btn" id="bLimpar">Limpar</button>
     </div>
@@ -337,7 +339,7 @@ function analisar(){
   }
   al.length=0; al.push(...final);
   al.sort((a,b)=>(a.nivel===b.nivel?0:a.nivel==="r"?-1:1));
-  analise={alertas:al, portStatus:st, travasValidas:tv, conexoes:conex, pares};
+  analise={alertas:al, portStatus:st, travasValidas:tv, conexoes:conex, pares, presos};
 }
 
 // ---------- desenho ----------
@@ -435,7 +437,7 @@ function render(){
   }
   for (const tv of analise.travasValidas){ desenhaTrava(camItens,tv,tv.on);
     const a=el("circle",{cx:tv.x,cy:tv.y,r:9,fill:"transparent",class:"porta-alvo","data-trava":tv.k},camAlvos);
-    if(!tv.on) el("circle",{cx:tv.x,cy:tv.y,r:3.6,fill:"var(--vermelho)",stroke:"#fff","stroke-width":.9,"pointer-events":"none"},camAlvos); }
+    if(!tv.on && !analise.presos.has([tv.a,tv.b].sort((x,y)=>x-y).join("|"))) el("circle",{cx:tv.x,cy:tv.y,r:3.6,fill:"var(--vermelho)",stroke:"#fff","stroke-width":.9,"pointer-events":"none"},camAlvos); }
   const comDupla=new Set();
   for (const pr of analise.pares) if (duplas[pr.pk]){ desenhaItem(camItens,duplas[pr.pk],pr.x,pr.y,pr.dx,pr.dy,false); pr.pk.split("|").forEach(s=>comDupla.add(s)); }
   for (const m of mods) for (const p of portasMundo(m)){
@@ -518,6 +520,20 @@ function destaca(a){
 // ---------- catálogo ----------
 function montaCatalogo(){
   const box=document.getElementById("catalogo"); const grupos={};
+  { const h=document.createElement("h2"); h.textContent="Kits prontos"; box.appendChild(h);
+    precoKits();
+    for (const k of KITS){
+      const c=document.createElement("div"); c.className="card kit"; c.style.cursor="pointer";
+      const s=document.createElementNS(NS,"svg"); s.setAttribute("viewBox","0 0 12 8");
+      const ic=["#6f8a3c","#9a6334","#556b2f"];
+      for (const [tid,gx,gy,rot] of k.mods){ const t=T[tid]; const [w,h]=(rot%2?[t.H,t.W]:[t.W,t.H]).map(v=>v/C);
+        el("rect",{x:gx+.08,y:gy+.08,width:w-.16,height:h-.16,rx:.18,fill:t.grupo==="Pré-definidos"?ic[1]:t.grupo==="Túneis"?"#c9a57b":ic[0]},s); }
+      c.appendChild(s);
+      const i=document.createElement("div");
+      i.innerHTML=`<div class="n">${k.nome}</div><div class="d">${k.desc}</div><div class="p">${brl(k.preco)} <span style="color:var(--suave);font-weight:700;font-size:12px">· ${k.n} módulos, tudo incluso</span></div>`;
+      c.appendChild(i); c.onclick=()=>carregaKit(k.id); box.appendChild(c);
+    }
+  }
   CAT.forEach(t=>(grupos[t.grupo]=grupos[t.grupo]||[]).push(t));
   for (const g of ["Módulos grandes","Túneis","Pré-definidos"]){
     if(!grupos[g]) continue;
@@ -680,6 +696,7 @@ document.getElementById("bDup").onclick=duplicar;
 document.getElementById("bDel").onclick=remover;
 document.getElementById("bAuto").onclick=completar;
 document.getElementById("bLimpar").onclick=()=>{ mods=[]; travas.clear(); duplas={}; selUid=null; render(); };
+document.getElementById("bDesfazer").onclick=()=>{ if(!desfazer) return; const s=JSON.parse(desfazer); mods=s.mods; travas=new Set(s.travas); duplas=s.duplas||{}; uidSeq=s.uidSeq; desfazer=null; document.getElementById("bDesfazer").disabled=true; selUid=null; render(); toast("Montagem anterior restaurada"); };
 document.getElementById("bExemplo").onclick=()=>{ exemplo(); render(); };
 document.getElementById("cTampa").onchange=e=>{ mostrarTampa=e.target.checked; render(); };
 window.addEventListener("keydown",e=>{
@@ -704,6 +721,41 @@ function exemplo(){
   travas.delete(kp(9*C, 2*C)); const kf=Object.keys(duplas).find(k=>k.split("|").every(s=>[9,10].includes(+s.split(":")[0]))); if (kf) duplas[kf]="dupla_fechada";
   const pr=portasMundo(re).find(p=>p.x<=re.gx*C+.5); if (pr) delete re.items[pr.i];
   selUid=null;
+}
+// ---------- kits prontos ----------
+const KITS = [
+  {id:"pequeno", nome:"Kit Pequeno", desc:"Para colônias iniciais (até ~30 formigas): 1 ninho, bebedouro e arena.",
+   mods:[["arena",2,1,0],["rede8a",2,3,0],["bebe",4,3,1]]},
+  {id:"medio", nome:"Kit Médio", desc:"Colônias em crescimento (~30–150): 2 ninhos, túneis, bebedouro e arena.",
+   mods:[["arena",2,0,0],["rede8a",2,2,0],["tT",4,2,0],["tcruz",4,3,0],["cam8",5,2,0],["bebe",7,3,1],["treto",4,4,0]]},
+  {id:"grande", nome:"Kit Grande", desc:"Colônias grandes (150+): 4 ninhos, válvula, corredor, túneis, bebedouro e arena.",
+   mods:[["arena",1,0,0],["rede8a",1,2,0],["tT",3,2,0],["tcruz",3,3,0],["valv8",4,2,0],["bebe",6,3,1],
+         ["cam8",8,2,0],["rede8b",8,0,0],["treto",4,4,1],["tcurva",5,4,2],["rede2a",1,4,1],["corr",3,4,0]]},
+];
+let desfazer=null;
+function montaKit(k){
+  mods=[]; travas.clear(); duplas={}; uidSeq=1;
+  for (const [tid,gx,gy,rot] of k.mods) mods.push({uid:uidSeq++,tid,gx,gy,rot,items:{}});
+  completarSilencioso(); completarSilencioso();
+}
+function carregaKit(id){
+  desfazer=JSON.stringify({mods,travas:[...travas],duplas,uidSeq});
+  montaKit(KITS.find(k=>k.id===id)); selUid=null; render();
+  document.getElementById("bDesfazer").disabled=false;
+  toast(KITS.find(k=>k.id===id).nome+" carregado — clique em Desfazer para voltar ao que você tinha");
+}
+function totalAtual(){
+  let tot=mods.reduce((s,m)=>s+T[m.tid].preco,0);
+  for (const m of mods) for (const p of portasMundo(m)) if (p.item&&!p.fixo) tot+=ITENS[p.item].preco;
+  analisar();
+  for (const pr of analise.pares) if (duplas[pr.pk]) tot+=ITENS[duplas[pr.pk]].preco;
+  tot+=analise.travasValidas.filter(t=>t.on).length*ITENS.trava.preco;
+  return tot;
+}
+function precoKits(){
+  const salvo=JSON.stringify({mods,travas:[...travas],duplas,uidSeq});
+  for (const k of KITS){ montaKit(k); k.preco=totalAtual(); k.n=mods.length; analisar(); k.alertas=analise.alertas.length; }
+  const s=JSON.parse(salvo); mods=s.mods; travas=new Set(s.travas); duplas=s.duplas; uidSeq=s.uidSeq;
 }
 function salvar(){ try{ localStorage.setItem("antsocial-formicario-v6",JSON.stringify({mods,travas:[...travas],duplas,uidSeq})); }catch(e){} }
 function carregar(){ try{ const s=JSON.parse(localStorage.getItem("antsocial-formicario-v6")); if(s&&s.mods&&s.mods.every(m=>T[m.tid])){ mods=s.mods; travas=new Set(s.travas||[]); duplas=s.duplas||{}; uidSeq=s.uidSeq||mods.length+1; return true; } }catch(e){} return false; }
