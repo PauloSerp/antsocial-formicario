@@ -918,7 +918,12 @@ function pecaTrava(s){
 let enquadrado=false, geracao=0;
 const GLB={}; let PECAS=null;
 function carregaGLB(nome){
-  if (!GLB[nome]) GLB[nome]=new Promise((ok,erro)=>new THREE.GLTFLoader().load("modelos/"+nome+".glb", g=>ok(g.scene), undefined, erro)).catch(e=>{ console.warn("modelo",nome,e); return null; });
+  if (!GLB[nome]) GLB[nome]=new Promise((ok,erro)=>{
+      const emb=window.MODELOS_B64&&window.MODELOS_B64[nome];
+      if (emb){ const bin=atob(emb), buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+        new THREE.GLTFLoader().parse(buf.buffer,"",g=>ok(g.scene),erro); }
+      else new THREE.GLTFLoader().load("modelos/"+nome+".glb", g=>ok(g.scene), undefined, erro);
+    }).catch(e=>{ console.warn("modelo",nome,e); return null; });
   return GLB[nome];
 }
 function materialDo(nome, fixo){
