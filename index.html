@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>AntSocial · Monte seu formicário</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
@@ -97,8 +97,47 @@ nav.abas button.on{background:#fff;color:var(--verde);box-shadow:0 1px 4px rgba(
 #fantasma{position:fixed;pointer-events:none;z-index:25;display:none}
 @keyframes pulso{0%{r:7}50%{r:12}100%{r:7}}
 .pulsa{animation:pulso .6s ease-in-out 3}
+.palco{position:relative}
+.zoom{position:absolute;right:22px;bottom:20px;display:flex;flex-direction:column;gap:6px}
+.zoom .btn{width:38px;height:38px;padding:0;font-size:19px;line-height:1;box-shadow:0 2px 8px rgba(80,60,30,.12)}
+#armado{position:absolute;left:50%;top:22px;transform:translateX(-50%);background:var(--verde);color:#fff;font-weight:800;font-size:13.5px;padding:8px 14px;border-radius:999px;display:none;box-shadow:0 4px 14px rgba(60,80,30,.3);white-space:nowrap}
+#armado button{margin-left:8px;border:none;background:rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:2px 9px;font-weight:800;cursor:pointer}
+nav.mobabas{display:none}
 @media (max-width:1100px){main{grid-template-columns:250px 1fr}aside.lado{grid-column:1/-1;border-left:none;border-top:1px solid var(--linha)}}
-@media (max-width:760px){main{grid-template-columns:1fr}aside.cat{max-height:260px;border-right:none;border-bottom:1px solid var(--linha)}header .sub{display:none}}
+@media (max-width:420px){ header h1{display:none} #aba3d{font-size:0} #aba3d::after{content:"3D";font-size:13px} }
+@media (max-width:820px){
+  body{height:100dvh;overflow:hidden}
+  header{padding:8px 10px;gap:8px}
+  header .logo{width:30px;height:30px} header h1{font-size:16px} header .sub{display:none}
+  nav.abas{margin-left:4px} nav.abas button{padding:6px 9px;font-size:13px}
+  header .total{gap:6px} header .valor{font-size:15px;white-space:nowrap} #resumoAlertas{display:none}
+  nav.abas button{white-space:nowrap}
+  #armado{white-space:normal;max-width:calc(100% - 24px);text-align:center;font-size:12.5px;top:12px;padding:7px 12px}
+  main#vMontar{display:flex;flex-direction:column;min-height:0;flex:1}
+  .centro{order:1;flex:1 1 auto;min-height:0}
+  .barra{padding:6px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .barra .btn{padding:6px 9px;font-size:12.5px;white-space:nowrap} .barra .k{display:none} .barra .sep{display:none}
+  .barra .chk{font-size:12.5px;white-space:nowrap}
+  .palco{padding:6px;overflow:hidden}
+  #tab{min-width:0;width:100%;height:100%;max-height:none;border-radius:10px}
+  .dica{display:none}
+  nav.mobabas{order:2;display:flex;gap:4px;padding:6px 8px 0;background:var(--papel);border-top:1px solid var(--linha)}
+  nav.mobabas button{flex:1;border:none;background:var(--creme);border-radius:10px 10px 0 0;padding:9px 6px;font-weight:800;font-size:13.5px;color:var(--suave);font-family:inherit}
+  nav.mobabas button.on{background:#fff;color:var(--verde);box-shadow:0 -1px 0 var(--linha) inset}
+  #mBadge .pill{padding:1px 7px;font-size:11.5px}
+  aside.cat,aside.lado{order:3;display:none;height:38dvh;border:none;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:#fff}
+  aside.on{display:block}
+  .card{grid-template-columns:54px 1fr;padding:7px;touch-action:pan-y}
+  .card svg{width:54px;height:54px} .card.kit svg{width:54px;height:38px}
+  .card .d{font-size:11px}
+  #pop{left:0!important;right:0;top:auto!important;bottom:0;border-radius:18px 18px 0 0;min-width:0;padding:10px 10px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -10px 30px rgba(60,40,20,.25)}
+  #pop button{padding:13px 12px;font-size:15px}
+  #toast{bottom:calc(40dvh + 10px);max-width:92vw;white-space:normal;text-align:center}
+  .zoom{right:14px;bottom:14px}
+  .ctrl3d{left:8px;top:8px;right:8px;gap:5px} .ctrl3d .btn{padding:6px 9px;font-size:12.5px}
+  .info3d{right:8px;top:auto;bottom:10px;padding:8px 11px;font-size:12px;max-width:60vw} .info3d .valor{font-size:16px}
+  .dica3d{display:none}
+}
 </style>
 </head>
 <body>
@@ -115,6 +154,7 @@ nav.abas button.on{background:#fff;color:var(--verde);box-shadow:0 1px 4px rgba(
   </div>
 </header>
 <main id="vMontar">
+  <nav class="mobabas"><button id="mCat" class="on">＋ Catálogo</button><button id="mLado">Alertas e pedido <span id="mBadge"></span></button></nav>
   <aside class="cat" id="catalogo"></aside>
   <section class="centro">
     <div class="barra">
@@ -130,7 +170,10 @@ nav.abas button.on{background:#fff;color:var(--verde);box-shadow:0 1px 4px rgba(
       <button class="btn" id="bExemplo">Exemplo</button>
       <button class="btn" id="bLimpar">Limpar</button>
     </div>
-    <div class="palco"><svg id="tab" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="palco"><svg id="tab" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="zoom"><button class="btn" id="zMais" title="Aproximar">+</button><button class="btn" id="zMenos" title="Afastar">−</button><button class="btn" id="zAjustar" title="Ajustar à montagem">⤢</button></div>
+      <div id="armado"></div>
+    </div>
     <div class="dica">Arraste módulos do catálogo para a mesa. Clique numa saída para escolher a porta, ou arraste portas e travas do catálogo para cima delas. Arraste um módulo para mover. Para girar: clique no ⟳ verde do módulo selecionado, dê duplo clique nele ou aperte R.</div>
   </section>
   <aside class="lado">
@@ -421,7 +464,31 @@ function defsBase(svg){
 }
 const tab=document.getElementById("tab");
 const LW=COLS*C+2*MARG, LH=ROWS*C+2*MARG;
-tab.setAttribute("viewBox",`${-MARG} ${-MARG} ${LW} ${LH}`);
+const TOQUE = matchMedia("(pointer:coarse)").matches;
+const MOBILE = () => matchMedia("(max-width:820px)").matches;
+let vista={x:-MARG,y:-MARG,w:LW,h:LH};
+function aplicaVista(){ tab.setAttribute("viewBox",`${vista.x} ${vista.y} ${vista.w} ${vista.h}`); }
+function limitaVista(){
+  const asp = (tab.clientHeight||LH)/(tab.clientWidth||LW);
+  vista.w=Math.max(90,Math.min(LW*1.6,vista.w)); vista.h=vista.w*asp;
+  const cx=vista.x+vista.w/2, cy=vista.y+vista.h/2;
+  const ncx=Math.max(-MARG,Math.min(COLS*C+MARG,cx)), ncy=Math.max(-MARG,Math.min(ROWS*C+MARG,cy));
+  vista.x=ncx-vista.w/2; vista.y=ncy-vista.h/2;
+}
+function zoomEm(f, px, py){ // px,py em mm do mundo
+  const nw=vista.w*f; const k=nw/vista.w;
+  vista.x=px-(px-vista.x)*k; vista.y=py-(py-vista.y)*k; vista.w=nw; limitaVista(); aplicaVista();
+}
+function ajustarVista(){
+  const asp=(tab.clientHeight||LH)/(tab.clientWidth||LW);
+  let x0=-MARG,y0=-MARG,x1=COLS*C+MARG,y1=ROWS*C+MARG;
+  if (mods.length){ x0=1e9;y0=1e9;x1=-1e9;y1=-1e9;
+    for (const m of mods){ const [w,h]=dims(m); x0=Math.min(x0,m.gx*C); y0=Math.min(y0,m.gy*C); x1=Math.max(x1,m.gx*C+w); y1=Math.max(y1,m.gy*C+h); }
+    x0-=C*.6; y0-=C*.6; x1+=C*.6; y1+=C*.6; }
+  let w=x1-x0, h=y1-y0; if (h/w>asp) w=h/asp; else h=w*asp;
+  vista={x:(x0+x1)/2-w/2, y:(y0+y1)/2-h/2, w, h}; limitaVista(); aplicaVista();
+}
+aplicaVista();
 function render(){
   analisar();
   tab.innerHTML=""; defsBase(tab);
@@ -436,15 +503,17 @@ function render(){
     desenhaModulo(g,t,{tampa:mostrarTampa});
     if (m.uid===selUid){ el("rect",{x:-1.2,y:-1.2,width:t.W+2.4,height:t.H+2.4,rx:5,fill:"none",stroke:"var(--verde)","stroke-width":1.6,"stroke-dasharray":"5 3"},g); }
   }
+  if (armado==="trava") tab.querySelectorAll("[data-trava]").forEach(c=>{ c.setAttribute("fill","rgba(111,138,60,.22)"); c.setAttribute("stroke","rgba(85,107,47,.85)"); });
   const ms=porUid(selUid);
   if (ms){ const [w]=dims(ms); const bx=ms.gx*C+w-1, by=ms.gy*C+1;
     const gb=el("g",{class:"girar-btn",transform:`translate(${bx},${by})`,style:"cursor:pointer"},tab);
+    if (TOQUE) gb.setAttribute("transform",`translate(${bx},${by}) scale(1.35)`);
     el("circle",{r:9,fill:"var(--verde)",stroke:"#fff","stroke-width":1.6},gb);
     el("path",{d:"M-4.2,-1.2 A4.4,4.4 0 1 1 -2.6,3.6",fill:"none",stroke:"#fff","stroke-width":1.7,"stroke-linecap":"round"},gb);
     el("path",{d:"M-6.4,-2.4 L-4,1 L-1.6,-2.6 Z",fill:"#fff"},gb);
     const tt=el("title",{},gb); tt.textContent="Girar (R ou duplo clique)"; }
   for (const tv of analise.travasValidas){ desenhaTrava(camItens,tv,tv.on);
-    const a=el("circle",{cx:tv.x,cy:tv.y,r:9,fill:"transparent",class:"porta-alvo","data-trava":tv.k},camAlvos);
+    const a=el("circle",{cx:tv.x,cy:tv.y,r:TOQUE?12:9,fill:"transparent",class:"porta-alvo","data-trava":tv.k},camAlvos);
     if(!tv.on && !analise.presos.has([tv.a,tv.b].sort((x,y)=>x-y).join("|"))) el("circle",{cx:tv.x,cy:tv.y,r:3.6,fill:"var(--vermelho)",stroke:"#fff","stroke-width":.9,"pointer-events":"none"},camAlvos); }
   const comDupla=new Set();
   for (const pr of analise.pares) if (duplas[pr.pk]){ desenhaItem(camItens,duplas[pr.pk],pr.x,pr.y,pr.dx,pr.dy,false); pr.pk.split("|").forEach(s=>comDupla.add(s)); }
@@ -452,7 +521,8 @@ function render(){
     if (p.item && !comDupla.has(m.uid+":"+p.i)) desenhaItem(camItens,p.item,p.x,p.y,p.dx,p.dy,!!p.fixo);
     const s=analise.portStatus[m.uid+":"+p.i];
     const cx=p.x-p.dx*13, cy=p.y-p.dy*13;
-    const alvo=el("circle",{cx:p.x-p.dx*4,cy:p.y-p.dy*4,r:9,fill:"transparent",class:"porta-alvo","data-uid":m.uid,"data-porta":p.i},camAlvos);
+    const alvo=el("circle",{cx:p.x-p.dx*4,cy:p.y-p.dy*4,r:TOQUE?12:9,fill:"transparent",class:"porta-alvo","data-uid":m.uid,"data-porta":p.i},camAlvos);
+    if (armado && !p.fixo && (armado!=="trava")) { alvo.setAttribute("fill","rgba(111,138,60,.22)"); alvo.setAttribute("stroke","rgba(85,107,47,.85)"); alvo.setAttribute("stroke-width",.8); }
     if (s==="r"||s==="y"){
       el("circle",{cx,cy,r:5.4,fill:s==="r"?"var(--vermelho)":"var(--amarelo)",stroke:"#fff","stroke-width":1.1,"pointer-events":"none","data-badge":m.uid+":"+p.i},camAlvos);
       const tx=el("text",{x:cx,y:cy+2.6,"text-anchor":"middle","font-size":7.5,"font-weight":900,fill:"#fff","pointer-events":"none"},camAlvos); tx.textContent="!";
@@ -466,8 +536,19 @@ function render(){
 }
 
 // ---------- painéis ----------
+function mostraPainel(q){
+  document.getElementById("catalogo").classList.toggle("on",q==="cat");
+  document.querySelector("aside.lado").classList.toggle("on",q==="lado");
+  document.getElementById("mCat").classList.toggle("on",q==="cat");
+  document.getElementById("mLado").classList.toggle("on",q==="lado");
+  setTimeout(()=>{ limitaVista(); aplicaVista(); },0);
+}
+let painelAtual="cat";
+document.getElementById("mCat").onclick=()=>{ painelAtual=painelAtual==="cat"?null:"cat"; mostraPainel(painelAtual); };
+document.getElementById("mLado").onclick=()=>{ painelAtual=painelAtual==="lado"?null:"lado"; mostraPainel(painelAtual); };
 function painel(){
   const A=analise.alertas, nr=A.filter(a=>a.nivel==="r").length, ny=A.length-nr;
+  const mb=document.getElementById("mBadge"); if (mb) mb.innerHTML = !mods.length? "" : nr? `<span class="pill r">${nr}</span>` : ny? `<span class="pill y">${ny}</span>` : `<span class="pill ok">✓</span>`;
   document.getElementById("resumoAlertas").innerHTML = mods.length===0 ? "" :
     (nr? `<span class="pill r">● ${nr}</span>`:"") + (ny? `<span class="pill y">● ${ny}</span>`:"") + (!A.length? `<span class="pill ok">✓ Tudo encaixado</span>`:"");
   const box=document.getElementById("alertas"); box.innerHTML="";
@@ -551,7 +632,10 @@ function montaCatalogo(){
       c.appendChild(svgModulo(t));
       const i=document.createElement("div");
       i.innerHTML=`<div class="n">${t.nome}${t.inclui.length?'<span class="tag">pré-definido</span>':""}</div><div class="d">${t.desc}</div><div class="p">${brl(t.preco)}</div>`;
-      c.appendChild(i); c.addEventListener("pointerdown",e=>iniciaArrasto(e,{novo:t.id})); box.appendChild(c);
+      c.appendChild(i);
+      c.addEventListener("pointerdown",e=>{ if (e.pointerType==="mouse") iniciaArrasto(e,{novo:t.id}); });
+      c.addEventListener("click",e=>{ if (e.pointerType!=="mouse" || TOQUE) adicionaAuto(t.id); });
+      box.appendChild(c);
     }
   }
   const h=document.createElement("h2"); h.textContent="Portas e travas"; box.appendChild(h);
@@ -563,12 +647,15 @@ function montaCatalogo(){
     if (it==="trava") desenhaTrava(s,{x:0,y:0,dx:1,dy:0},true); else desenhaItem(s,it,0,ITENS[it].dupla?0:3,0,1,false);
     c.appendChild(s);
     const i=document.createElement("div"); i.innerHTML=`<div class="n">${ITENS[it].nome}</div><div class="d">${ITENS[it].desc}</div><div class="p">${brl(ITENS[it].preco)}</div>`;
-    c.appendChild(i); c.addEventListener("pointerdown",e=>iniciaArrasto(e,{item:it})); box.appendChild(c);
+    c.appendChild(i);
+    c.addEventListener("pointerdown",e=>{ if (e.pointerType==="mouse") iniciaArrasto(e,{item:it}); });
+    c.addEventListener("click",e=>{ if (e.pointerType!=="mouse" || TOQUE || !lastDragMoved) arma(it); });
+    box.appendChild(c);
   }
 }
 
 // ---------- arrastar ----------
-let drag=null;
+let drag=null, lastDragMoved=false;
 function ptMundo(e){ const p=tab.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(tab.getScreenCTM().inverse()); }
 function iniciaArrasto(e, o){
   e.preventDefault(); fechaPop();
@@ -614,7 +701,7 @@ function destacaAlvos(item){
 function fimArrasto(e){
   window.removeEventListener("pointermove",moveArrasto);
   const f=document.getElementById("fantasma"); f.style.display="none"; f.dataset.it="";
-  const d=drag; drag=null; if(!d) return;
+  const d=drag; drag=null; if(!d) return; lastDragMoved=d.moveu;
   if (d.item){
     if (!d.moveu){ render(); return; }
     const w=ptMundo(e); let melhor=null, dm=12;
@@ -639,14 +726,75 @@ function fimArrasto(e){
   render();
 }
 let ultimoClique={uid:null,t:0};
+const dedos=new Map(); let pan=null, pinca=null;
 tab.addEventListener("pointerdown",e=>{
+  dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if (dedos.size===2){ // pinça: cancela arrasto e começa zoom
+    if (drag){ drag=null; window.removeEventListener("pointermove",moveArrasto); const gf=tab.querySelector("#gfant"); if(gf) gf.remove(); }
+    const [a,b]=[...dedos.values()]; pinca={d:Math.hypot(a.x-b.x,a.y-b.y), w:vista.w}; pan=null; return; }
   if (e.target.closest(".girar-btn")){ e.preventDefault(); e.stopPropagation(); girar(); return; }
   const alvo=e.target.closest(".porta-alvo");
-  if (alvo){ e.preventDefault(); abrePop(alvo,e); return; }
+  if (alvo){ e.preventDefault(); if (armado) colocaArmado(alvo); else abrePop(alvo,e); return; }
   const g=e.target.closest(".mod"); fechaPop();
   if (g){ iniciaArrasto(e,{uid:+g.dataset.uid}); return; }
-  selUid=null; render();
+  pan={x:e.clientX,y:e.clientY,vx:vista.x,vy:vista.y,moveu:false};
 });
+tab.addEventListener("pointermove",e=>{
+  if (!dedos.has(e.pointerId)) return; dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if (pinca && dedos.size===2){ const [a,b]=[...dedos.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y);
+    const mid=ptMundo({clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2}); zoomEm((pinca.w*pinca.d/d)/vista.w, mid.x, mid.y); return; }
+  if (pan){ const r=tab.getBoundingClientRect(), k=vista.w/r.width;
+    const dx=e.clientX-pan.x, dy=e.clientY-pan.y; if (Math.hypot(dx,dy)>4) pan.moveu=true;
+    if (pan.moveu){ vista.x=pan.vx-dx*k; vista.y=pan.vy-dy*k; limitaVista(); aplicaVista(); } }
+});
+const soltaDedo=e=>{ dedos.delete(e.pointerId); if (dedos.size<2) pinca=null;
+  if (pan && dedos.size===0){ if(!pan.moveu){ selUid=null; render(); } pan=null; } };
+tab.addEventListener("pointerup",soltaDedo); tab.addEventListener("pointercancel",soltaDedo);
+tab.addEventListener("wheel",e=>{ e.preventDefault(); const w=ptMundo(e); zoomEm(Math.exp(e.deltaY*0.0015), w.x, w.y); },{passive:false});
+document.getElementById("zMais").onclick=()=>zoomEm(0.75, vista.x+vista.w/2, vista.y+vista.h/2);
+document.getElementById("zMenos").onclick=()=>zoomEm(1.33, vista.x+vista.w/2, vista.y+vista.h/2);
+document.getElementById("zAjustar").onclick=ajustarVista;
+window.addEventListener("resize",()=>{ limitaVista(); aplicaVista(); });
+
+// ---------- peça "armada" (toque na peça, depois na saída) ----------
+let armado=null;
+function arma(it){ armado=it; const a=document.getElementById("armado");
+  a.innerHTML=`Toque ${it==="trava"?"numa junção tracejada":ITENS[it].dupla?"no encontro de dois módulos":"numa saída"} para colocar: ${ITENS[it].nome.toLowerCase()}<button id="desarma">✕</button>`;
+  a.style.display="block"; document.getElementById("desarma").onclick=()=>{ desarma(); render(); };
+  if (MOBILE()) mostraPainel(null); render(); }
+function desarma(){ armado=null; document.getElementById("armado").style.display="none"; }
+function colocaArmado(alvo){
+  const it=armado;
+  if (it==="trava"){ if(alvo.dataset.trava){ travas.add(alvo.dataset.trava); toast("Colocada: trava de união"); } else { toast("Travas vão nas junções tracejadas"); return; } }
+  else if (alvo.dataset.trava){ toast("Portas vão nas saídas dos módulos"); return; }
+  else { const m=porUid(+alvo.dataset.uid), i=+alvo.dataset.porta, par=parDaPorta(m.uid,i);
+    if (T[m.tid].portas[i].fixo){ toast("Esta saída é pré-definida e não pode ser trocada"); return; }
+    if (ITENS[it].dupla){ if(par&&par.livre){ poeDupla(par.pk,it); toast("Colocada: "+ITENS[it].nome.toLowerCase()); } else { toast("A junção dupla vai entre duas saídas encostadas"); return; } }
+    else { if (par&&duplas[par.pk]) tiraDupla(par.pk); m.items[i]=it; toast("Colocado: "+ITENS[it].nome.toLowerCase()); } }
+  render();   // continua armado para colocar mais; ✕ desarma
+}
+
+// ---------- colocar módulo automaticamente (toque no catálogo) ----------
+function adicionaAuto(tid){
+  const fake={uid:-1,tid,gx:0,gy:0,rot:0,items:{}};
+  let melhor=null;
+  const PMex=mods.map(m=>portasMundo(m)).flat();
+  for (let rot=0; rot<4; rot++) for (let gy=0; gy<ROWS; gy++) for (let gx=0; gx<COLS; gx++){
+    if (!cabe(fake,gx,gy,rot,-1)) continue;
+    fake.gx=gx; fake.gy=gy; fake.rot=rot;
+    const pp=portasMundo(fake); let s=0;
+    for (const p of pp) if (PMex.some(q=>Math.abs(q.x-p.x)<.6&&Math.abs(q.y-p.y)<.6)) s+=10;
+    const [w,h]=cells(fake); const cx=gx+w/2, cy=gy+h/2;
+    let dmin=mods.length?1e9:Math.hypot(cx-COLS/2,cy-ROWS/2);
+    for (const m of mods){ const [mw,mh]=cells(m); dmin=Math.min(dmin,Math.hypot(cx-(m.gx+mw/2),cy-(m.gy+mh/2))); }
+    s-=dmin+rot*0.01;
+    if (!melhor||s>melhor.s) melhor={s,gx,gy,rot};
+  }
+  if (!melhor){ toast("Não há espaço livre na mesa"); return; }
+  const m={uid:uidSeq++,tid,gx:melhor.gx,gy:melhor.gy,rot:melhor.rot,items:{}}; mods.push(m); selUid=m.uid;
+  render(); if (MOBILE()) ajustarVista();
+  toast(`${T[tid].nome} colocado${melhor.s>0?" encaixando no vizinho":""}. Arraste para ajustar.`);
+}
 
 // ---------- popover de porta ----------
 const pop=document.getElementById("pop");
@@ -716,7 +864,7 @@ window.addEventListener("keydown",e=>{
   if (e.key==="r"||e.key==="R"){ e.preventDefault(); girar(); }
   else if (e.key==="Delete"||e.key==="Backspace"){ if(selUid){ e.preventDefault(); remover(); } }
   else if (e.key==="d"||e.key==="D"){ e.preventDefault(); duplicar(); }
-  else if (e.key==="Escape"){ fechaPop(); selUid=null; render(); }
+  else if (e.key==="Escape"){ fechaPop(); desarma(); selUid=null; render(); }
 });
 let tt; function toast(s){ const t=document.getElementById("toast"); t.textContent=s; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),2200); }
 
@@ -752,7 +900,7 @@ function montaKit(k){
 }
 function carregaKit(id){
   desfazer=JSON.stringify({mods,travas:[...travas],duplas,uidSeq});
-  montaKit(KITS.find(k=>k.id===id)); selUid=null; render();
+  montaKit(KITS.find(k=>k.id===id)); selUid=null; render(); ajustarVista();
   document.getElementById("bDesfazer").disabled=false;
   toast(KITS.find(k=>k.id===id).nome+" carregado — clique em Desfazer para voltar ao que você tinha");
 }
@@ -773,7 +921,9 @@ function salvar(){ try{ localStorage.setItem("antsocial-formicario-v6",JSON.stri
 function carregar(){ try{ const s=JSON.parse(localStorage.getItem("antsocial-formicario-v6")); if(s&&s.mods&&s.mods.every(m=>T[m.tid])){ mods=s.mods; travas=new Set(s.travas||[]); duplas=s.duplas||{}; uidSeq=s.uidSeq||mods.length+1; return true; } }catch(e){} return false; }
 montaCatalogo();
 if (!carregar()) exemplo();
+if (MOBILE()) mostraPainel("cat");
 render();
+setTimeout(()=>{ if (MOBILE()) ajustarVista(); else { limitaVista(); aplicaVista(); } },50);
 
 // ================= VISUALIZAÇÃO 3D =================
 function mudaAba(a){
@@ -795,14 +945,14 @@ function init3D(){
   if (typeof THREE==="undefined" || !THREE.OrbitControls){ car.textContent="Não foi possível carregar a biblioteca 3D. Verifique a conexão e recarregue a página."; return; }
   car.style.display="none";
   const ren=new THREE.WebGLRenderer({antialias:true,alpha:true});
-  ren.setPixelRatio(Math.min(devicePixelRatio,2)); ren.shadowMap.enabled=true; ren.shadowMap.type=THREE.PCFSoftShadowMap;
+  ren.setPixelRatio(Math.min(devicePixelRatio, TOQUE?1.5:2)); ren.shadowMap.enabled=true; ren.shadowMap.type=THREE.PCFSoftShadowMap;
   box.insertBefore(ren.domElement, box.firstChild);
   const cena=new THREE.Scene();
   const cam=new THREE.PerspectiveCamera(38,1,1,6000);
   const ctl=new THREE.OrbitControls(cam, ren.domElement); ctl.enableDamping=true; ctl.maxPolarAngle=Math.PI*0.495;
   cena.add(new THREE.HemisphereLight(0xfffaf0,0x9c8a6c,0.62));
   const sol=new THREE.DirectionalLight(0xffffff,0.62); sol.position.set(-300,600,350); sol.castShadow=true;
-  sol.shadow.mapSize.set(2048,2048); const sc=sol.shadow.camera; sc.left=-700; sc.right=700; sc.top=700; sc.bottom=-700; sc.near=10; sc.far=2000; sol.shadow.bias=-0.0006;
+  sol.shadow.mapSize.set(TOQUE?1024:2048, TOQUE?1024:2048); const sc=sol.shadow.camera; sc.left=-700; sc.right=700; sc.top=700; sc.bottom=-700; sc.near=10; sc.far=2000; sol.shadow.bias=-0.0006;
   cena.add(sol); cena.add(sol.target);
   const chao=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000), new THREE.ShadowMaterial({opacity:0.16}));
   chao.rotation.x=-Math.PI/2; chao.receiveShadow=true; cena.add(chao);
@@ -999,7 +1149,7 @@ function limites(){
   return {cx:(x0+x1)/2, cz:(z0+z1)/2, tam:Math.max(x1-x0,z1-z0,110)};
 }
 function enquadra(topo){
-  const {cx,cz,tam}=limites(), {cam,ctl,sol}=R3; const d=tam*0.9+70;
+  const {cx,cz,tam}=limites(), {cam,ctl,sol}=R3; const asp=cam.aspect||1.6; let d=tam*0.9+70; if (asp<1.2) d*=1.25/Math.max(asp,.45);
   ctl.target.set(cx,10,cz);
   if (topo) cam.position.set(cx,d*1.15,cz+0.01); else cam.position.set(cx-d*0.45,d*0.75,cz+d*0.85);
   sol.position.set(cx-300,600,cz+350); sol.target.position.set(cx,0,cz); ctl.update();
