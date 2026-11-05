@@ -174,7 +174,7 @@ nav.mobabas{display:none}
       <div class="zoom"><button class="btn" id="zMais" title="Aproximar">+</button><button class="btn" id="zMenos" title="Afastar">−</button><button class="btn" id="zAjustar" title="Ajustar à montagem">⤢</button></div>
       <div id="armado"></div>
     </div>
-    <div class="dica">Arraste módulos do catálogo para a mesa. Clique numa saída para escolher a porta, ou arraste portas e travas do catálogo para cima delas. Arraste um módulo para mover. Para girar: clique no ⟳ verde do módulo selecionado, dê duplo clique nele ou aperte R.</div>
+    <div class="dica">Arraste módulos do catálogo para a mesa. Clique numa saída para escolher a porta, ou arraste portas e presilhas do catálogo para cima delas. Arraste um módulo para mover. Para girar: clique no ⟳ verde do módulo selecionado, dê duplo clique nele ou aperte R.</div>
   </section>
   <aside class="lado">
     <h2>Alertas</h2>
@@ -223,7 +223,8 @@ const ITENS = {
   tubo:     {nome:"Conexão de tubo", preco:7.90, desc:"Saída para mangueira (só na borda)"},
   tubo_ensaio: {nome:"Adaptador de tubo de ensaio", preco:9.90, desc:"Liga um tubo de ensaio 16 mm (colônia iniciante) a uma saída da borda"},
   capa:     {nome:"Capa contra luz", preco:0, desc:"Cobre o acrílico e deixa o ninho escuro. Toque num módulo para colocar"},
-  trava:    {nome:"Trava de união", preco:2.90, desc:"Prende um módulo ao vizinho"},
+  trava:    {nome:"Presilha de união", preco:2.90, desc:"Vai no canto onde os módulos se encontram: prende os vizinhos e segura o acrílico"},
+  uniao2:   {nome:"Presilha de união (2 módulos)", preco:2.90}, uniaoL: {nome:"Presilha de união em L (3 módulos)", preco:3.50}, uniao4: {nome:"Presilha de união em cruz (4 módulos)", preco:3.90},
 };
 const PASSA = new Set(["passagem","comporta"]);
 const EXTERNA = new Set(["tubo","tubo_ensaio"]);
@@ -334,7 +335,7 @@ function analisar(){
           fix:[["dupla",pk,"dupla_comporta"]]});
         marca(m.uid,p.i,"r"); marca(viz,q.i,"r"); continue; }
       if (faltam.length){
-        al.push({nivel:"r", txt:`Falta porta entre ${nome(m)} e ${nome(vm)}`, det: livre?"Uma das saídas ainda está sem peça. Troque as duas por uma junção dupla.":"O outro lado já vem com porta de fábrica: aqui vai uma porta simples, e os módulos se prendem com trava.", alvo:[faltam[0][0].uid,faltam[0][1].i],
+        al.push({nivel:"r", txt:`Falta porta entre ${nome(m)} e ${nome(vm)}`, det: livre?"Uma das saídas ainda está sem peça. Troque as duas por uma junção dupla.":"O outro lado já vem com porta de fábrica: aqui vai uma porta simples, e os módulos se prendem com presilha de união.", alvo:[faltam[0][0].uid,faltam[0][1].i],
           fix: livre?[["dupla",pk,"dupla_comporta"]]:faltam.map(([mm,pp])=>["porta",mm.uid,pp.i,"passagem"])}); marca(m.uid,p.i,!p.item?"r":"ok"); marca(viz,q.i,!q.item?"r":"ok"); continue; }
       // alguma é cego
       const cegos=[[m,p],[vm,q]].filter(([mm,pp])=>pp.item==="cego"&&!pp.fixo);
@@ -344,16 +345,21 @@ function analisar(){
       marca(m.uid,p.i,"y"); marca(viz,q.i,"y");
     }
   }
-  // travas
-  const tv=[], TM={}; mods.forEach(m=>TM[m.uid]=travasMundo(m));
+  // presilhas de união: nos pontos onde cantos de módulos se encontram (furos a 3,4 mm na diagonal)
+  const tv=[], cantos={};
+  for (const m of mods){ if (!temCapa(T[m.tid])) continue; const [w,h]=dims(m), x0=m.gx*C, y0=m.gy*C;
+    for (const [cx,cy,sx,sy] of [[x0,y0,1,1],[x0+w,y0,-1,1],[x0,y0+h,1,-1],[x0+w,y0+h,-1,-1]]){
+      const k=kp(cx,cy); (cantos[k]=cantos[k]||{x:cx,y:cy,q:[]}).q.push({uid:m.uid,sx,sy}); } }
   const vistosT=new Set();
-  for (const m of mods) for (const s of TM[m.uid]){
-    const cx=Math.floor((s.x+s.dx*2)/C), cy=Math.floor((s.y+s.dy*2)/C); const viz=o[`${cx},${cy}`];
-    if (!viz) continue; const vm=porUid(viz);
-    if (!TM[viz].some(q=>Math.abs(q.x-s.x)<.6&&Math.abs(q.y-s.y)<.6)) continue;
-    const k=kp(s.x,s.y); if (vistosT.has(k)) continue; vistosT.add(k);
-    tv.push({k,x:s.x,y:s.y,dx:s.dx,dy:s.dy,a:m.uid,b:viz,on:travas.has(k)});
-    if (travas.has(k)) trava(m.uid,viz);
+  for (const k in cantos){ const c=cantos[k]; if (c.q.length<2) continue;
+    const prs=[]; for (let i=0;i<c.q.length;i++) for (let j=i+1;j<c.q.length;j++){ const a=c.q[i], b=c.q[j]; if ((a.sx===b.sx)!==(a.sy===b.sy)) prs.push([a.uid,b.uid]); }
+    if (!prs.length) continue;
+    const tipo=c.q.length===2?"2":c.q.length===3?"L":"4"; let ang=0;
+    if (tipo==="2"){ const [a,b]=c.q; const v=a.sy===b.sy?[0,a.sy]:[a.sx,0]; ang=Math.atan2(-v[0],-v[1]); }
+    else if (tipo==="L"){ let mx=1,my=1; for (const sx of [1,-1]) for (const sy of [1,-1]) if (!c.q.some(q=>q.sx===sx&&q.sy===sy)){ mx=sx; my=sy; } ang=Math.atan2(-my,mx)-Math.PI/4; }
+    vistosT.add(k); const on=travas.has(k);
+    tv.push({k,x:c.x,y:c.y,q:c.q,tipo,ang,pares:prs,on,a:prs[0][0],b:prs[0][1]});
+    if (on) prs.forEach(([a,b])=>trava(a,b));
   }
   // módulos encostados precisam estar presos (junção dupla ou trava)
   const viz2=new Set();
@@ -363,11 +369,13 @@ function analisar(){
   for (const par of viz2){
     if (presos.has(par)||pendente.has(par)) continue;
     const [a,b]=par.split("|").map(Number), ma=porUid(a), mb=porUid(b);
-    const sitio=tv.find(s=>parM(s.a,s.b)===par), pl=pares.find(x=>parM(x.a,x.b)===par&&x.livre);
-    if (sitio) al.push({nivel:"r", txt:`${nome(ma)} e ${nome(mb)} estão soltos`, det:"Coloque a trava de união na junção tracejada, ou troque as portas por uma junção dupla.", alvoT:sitio.k, fix:[["trava",sitio.k]]});
+    if (!temCapa(T[ma.tid])||!temCapa(T[mb.tid])) continue;   // arena: encaixa pelas portas de fábrica (sem furos de presilha)
+    const sitio=tv.find(s=>s.pares.some(([x,y])=>parM(x,y)===par)), pl=pares.find(x=>parM(x.a,x.b)===par&&x.livre);
+    if (sitio) al.push({nivel:"r", txt:`${nome(ma)} e ${nome(mb)} estão soltos`, det:"Coloque uma presilha de união no canto tracejado, ou troque as portas por uma junção dupla.", alvoT:sitio.k, fix:[["trava",sitio.k]]});
     else if (pl){ const pa=PM[pl.a].find(q=>q.i===pl.ia), pb=PM[pl.b].find(q=>q.i===pl.ib);
       const tipo=(PASSA.has(pa.item)&&PASSA.has(pb.item))?"dupla_comporta":"dupla_fechada";
       al.push({nivel:"r", txt:`${nome(ma)} e ${nome(mb)} estão soltos`, det:"Portas simples não prendem os módulos. Use uma junção dupla nessa saída.", alvo:[pl.a,pl.ia], fix:[["dupla",pl.pk,tipo]]}); }
+    else al.push({nivel:"r", txt:`${nome(ma)} e ${nome(mb)} estão soltos`, det:"Eles não têm canto em comum nem saídas alinhadas para uma junção dupla. Alinhe os módulos pelos cantos.", alvoM:a, fix:null});
   }
   for (const k of [...travas]) if (!vistosT.has(k)) travas.delete(k);
   // módulos sem saída
@@ -449,9 +457,10 @@ function desenhaItem(g, item, x, y, dx, dy, fixo){
   if (fixo) el("circle",{cx:6,cy:-6.5,r:1.4,fill:"#e6edd8"},gg);
 }
 function desenhaTrava(g, s, on){
-  const ang = Math.atan2(s.dy,s.dx)*180/Math.PI;
-  const gg=el("g",{transform:`translate(${s.x},${s.y}) rotate(${ang})`},g);
-  el("path",{d:"M-11,-6.5 L0,-3.5 L11,-6.5 L11,6.5 L0,3.5 L-11,6.5 Z",fill:on?"#6f8a3c":"none",stroke:on?"#33431b":"rgba(90,60,40,.55)","stroke-width":on?.6:.9,"stroke-dasharray":on?"":"2 1.4"},gg);
+  const gg=el("g",{transform:`translate(${s.x},${s.y})`},g), E=9.5;
+  const q=s.q||[{sx:-1,sy:1},{sx:1,sy:1}];
+  for (const {sx,sy} of q) el("rect",{x:Math.min(0,sx*E),y:Math.min(0,sy*E),width:E,height:E,rx:1.6,fill:on?"#6f8a3c":"rgba(255,255,255,.25)",stroke:on?"#33431b":"rgba(90,60,40,.6)","stroke-width":on?.4:.7,"stroke-dasharray":on?"":"2 1.4"},gg);
+  if (on) for (const {sx,sy} of q) el("circle",{cx:sx*3.4,cy:sy*3.4,r:1.35,fill:"#33431b"},gg);
 }
 function svgModulo(t, size){
   const s=document.createElementNS(NS,"svg"); s.setAttribute("viewBox",`-2 -2 ${t.W+4} ${t.H+4}`);
@@ -568,7 +577,7 @@ function painel(){
     (nr? `<span class="pill r">● ${nr}</span>`:"") + (ny? `<span class="pill y">● ${ny}</span>`:"") + (!A.length? `<span class="pill ok">✓ Tudo encaixado</span>`:"");
   const box=document.getElementById("alertas"); box.innerHTML="";
   if (!mods.length) box.innerHTML=`<div class="vazio">Monte seu formicário para ver os alertas.</div>`;
-  else if (!A.length) box.innerHTML=`<div class="alerta" style="background:var(--verdeclaro);grid-template-columns:22px 1fr"><div class="ic" style="background:var(--verde)">✓</div><div><b>Tudo encaixado!</b><small>Todas as saídas têm porta e os módulos estão travados.</small></div></div>`;
+  else if (!A.length) box.innerHTML=`<div class="alerta" style="background:var(--verdeclaro);grid-template-columns:22px 1fr"><div class="ic" style="background:var(--verde)">✓</div><div><b>Tudo encaixado!</b><small>Todas as saídas têm porta e os módulos estão presos.</small></div></div>`;
   A.forEach((a,idx)=>{
     const d=document.createElement("div"); d.className="alerta "+a.nivel;
     d.innerHTML=`<div class="ic">!</div><div>${a.txt}<small>${a.det}</small></div>`+(a.fix?`<button class="fix">Corrigir</button>`:"<span></span>");
@@ -586,13 +595,13 @@ function painel(){
   for (const m of mods){ const t=T[m.tid]; cont[t.id]=(cont[t.id]||0)+1; total+=t.preco; }
   const ci={}; for (const m of mods) for (const p of portasMundo(m)) if (p.item&&!p.fixo) ci[p.item]=(ci[p.item]||0)+1;
   for (const pr of analise.pares) if (duplas[pr.pk]) ci[duplas[pr.pk]]=(ci[duplas[pr.pk]]||0)+1;
-  const nt=analise.travasValidas.filter(t=>t.on).length; if (nt) ci.trava=nt;
+  for (const tv of analise.travasValidas) if (tv.on){ const k="uniao"+tv.tipo; ci[k]=(ci[k]||0)+1; }
   const capas={}; for (const m of mods) if (m.capa){ const t=T[m.tid], k=`${t.W}×${t.H}`; capas[k]=capas[k]||{n:0,p:precoCapa(t)}; capas[k].n++; }
   let h="";
   for (const id in cont) h+=`<div class="linha"><span><span class="q">${cont[id]}×</span>${T[id].nome}</span><span>${brl(cont[id]*T[id].preco)}</span></div>`;
   for (const it in ci){ total+=ci[it]*ITENS[it].preco; h+=`<div class="linha"><span><span class="q">${ci[it]}×</span>${ITENS[it].nome}</span><span>${brl(ci[it]*ITENS[it].preco)}</span></div>`; }
   for (const k in capas){ const c=capas[k]; total+=c.n*c.p; h+=`<div class="linha"><span><span class="q">${c.n}×</span>Capa contra luz ${k}</span><span>${brl(c.n*c.p)}</span></div>`; }
-  const npres=mods.filter(m=>temCapa(T[m.tid])).length*4;
+  const npres=mods.filter(m=>temCapa(T[m.tid])).length*4-analise.travasValidas.filter(t=>t.on).reduce((s,t)=>s+t.q.length,0);
   if (npres) h+=`<div class="linha"><span><span class="q">${npres}×</span>Presilhas da tampa</span><span class="inc">incluso</span></div>`;
   const inclusos=mods.reduce((s,m)=>s+T[m.tid].portas.filter(p=>p.fixo).length,0);
   if (inclusos) h+=`<div class="linha"><span><span class="q">${inclusos}×</span>Portas pré-instaladas</span><span class="inc">incluso</span></div>`;
@@ -658,18 +667,18 @@ function montaCatalogo(){
       box.appendChild(c);
     }
   }
-  const h=document.createElement("h2"); h.textContent="Portas e travas"; box.appendChild(h);
+  const h=document.createElement("h2"); h.textContent="Portas e presilhas"; box.appendChild(h);
   const nota=document.createElement("div"); nota.className="vazio"; nota.style.paddingTop="0";
   nota.textContent="Não vêm com os módulos. Arraste para uma saída ou para a junção entre dois módulos."; box.appendChild(nota);
   for (const it of ["dupla_comporta","dupla_fechada","passagem","cego","tubo","tubo_ensaio","trava","capa"]){
     const c=document.createElement("div"); c.className="card acc";
     const s=document.createElementNS(NS,"svg"); s.setAttribute("viewBox","-14 -14 28 28");
-    if (it==="trava") desenhaTrava(s,{x:0,y:0,dx:1,dy:0},true);
+    if (it==="trava"){ s.setAttribute("viewBox","-12 -2 24 14"); desenhaTrava(s,{x:0,y:0},true); }
     else if (it==="capa"){ s.setAttribute("viewBox","-2 -2 28 28"); el("rect",{x:0,y:0,width:24,height:24,rx:3,fill:"#4b3a2c"},s); el("path",{d:"M15,6 a7,7 0 1 0 4,11 a5.5,5.5 0 1 1 -4,-11 Z",fill:"#e8d9b8"},s); }
     else if (it==="tubo_ensaio"){ s.setAttribute("viewBox","-14 -10 28 44"); desenhaItem(s,it,0,0,0,1,false); }
     else desenhaItem(s,it,0,ITENS[it].dupla?0:3,0,1,false);
     c.appendChild(s);
-    const i=document.createElement("div"); i.innerHTML=`<div class="n">${ITENS[it].nome}</div><div class="d">${ITENS[it].desc}</div><div class="p">${it==="capa"?"de R$ 7,90 a R$ 19,90":brl(ITENS[it].preco)}</div>`;
+    const i=document.createElement("div"); i.innerHTML=`<div class="n">${ITENS[it].nome}</div><div class="d">${ITENS[it].desc}</div><div class="p">${it==="capa"?"de R$ 7,90 a R$ 19,90":it==="trava"?"de R$ 2,90 a R$ 3,90":brl(ITENS[it].preco)}</div>`;
     c.appendChild(i);
     c.addEventListener("pointerdown",e=>{ if (e.pointerType==="mouse") iniciaArrasto(e,{item:it}); });
     c.addEventListener("click",e=>{ if (e.pointerType!=="mouse" || TOQUE || !lastDragMoved) arma(it); });
@@ -695,7 +704,7 @@ function moveArrasto(e){
   if (drag.item){
     f.style.display="block"; f.style.left=(e.clientX-16)+"px"; f.style.top=(e.clientY-16)+"px";
     if(!f.dataset.it||f.dataset.it!==drag.item){ f.dataset.it=drag.item; f.innerHTML=""; const s=document.createElementNS(NS,"svg"); s.setAttribute("viewBox","-14 -14 28 28"); s.setAttribute("width",32); s.setAttribute("height",32);
-      if(drag.item==="trava") desenhaTrava(s,{x:0,y:0,dx:1,dy:0},true); else desenhaItem(s,drag.item,0,4,0,1,false); f.appendChild(s); }
+      if(drag.item==="trava") desenhaTrava(s,{x:0,y:0},true); else desenhaItem(s,drag.item,0,4,0,1,false); f.appendChild(s); }
     destacaAlvos(drag.item);
     return;
   }
@@ -730,7 +739,7 @@ function fimArrasto(e){
     const w=ptMundo(e); let melhor=null, dm=12;
     tab.querySelectorAll(".porta-alvo").forEach(c=>{ const dd=Math.hypot(+c.getAttribute("cx")-w.x,+c.getAttribute("cy")-w.y); if(dd<dm){dm=dd;melhor=c;} });
     if (melhor){
-      if (d.item==="trava"){ if(melhor.dataset.trava){ travas.add(melhor.dataset.trava); toast("Colocada: trava de união"); } else toast("Travas vão nas junções tracejadas entre módulos"); }
+      if (d.item==="trava"){ if(melhor.dataset.trava){ travas.add(melhor.dataset.trava); toast("Colocada: presilha de união"); } else toast("Presilhas de união vão nos cantos tracejados entre módulos"); }
       else if (melhor.dataset.trava) toast("Portas vão nas saídas dos módulos");
       else { const m=porUid(+melhor.dataset.uid), i=+melhor.dataset.porta, par=parDaPorta(m.uid,i);
         if (T[m.tid].portas[i].fixo) toast("Esta saída é pré-definida e não pode ser trocada");
@@ -783,13 +792,13 @@ window.addEventListener("resize",()=>{ limitaVista(); aplicaVista(); });
 // ---------- peça "armada" (toque na peça, depois na saída) ----------
 let armado=null;
 function arma(it){ armado=it; const a=document.getElementById("armado");
-  a.innerHTML=`Toque ${it==="capa"?"num módulo":it==="trava"?"numa junção tracejada":ITENS[it].dupla?"no encontro de dois módulos":"numa saída"} para colocar: ${ITENS[it].nome.toLowerCase()}<button id="desarma">✕</button>`;
+  a.innerHTML=`Toque ${it==="capa"?"num módulo":it==="trava"?"num canto tracejado":ITENS[it].dupla?"no encontro de dois módulos":"numa saída"} para colocar: ${ITENS[it].nome.toLowerCase()}<button id="desarma">✕</button>`;
   a.style.display="block"; document.getElementById("desarma").onclick=()=>{ desarma(); render(); };
   if (MOBILE()) mostraPainel(null); render(); }
 function desarma(){ armado=null; document.getElementById("armado").style.display="none"; }
 function colocaArmado(alvo){
   const it=armado;
-  if (it==="trava"){ if(alvo.dataset.trava){ travas.add(alvo.dataset.trava); toast("Colocada: trava de união"); } else { toast("Travas vão nas junções tracejadas"); return; } }
+  if (it==="trava"){ if(alvo.dataset.trava){ travas.add(alvo.dataset.trava); toast("Colocada: presilha de união"); } else { toast("Presilhas de união vão nos cantos tracejados"); return; } }
   else if (alvo.dataset.trava){ toast("Portas vão nas saídas dos módulos"); return; }
   else { const m=porUid(+alvo.dataset.uid), i=+alvo.dataset.porta, par=parDaPorta(m.uid,i);
     if (T[m.tid].portas[i].fixo){ toast("Esta saída é pré-definida e não pode ser trocada"); return; }
@@ -824,8 +833,8 @@ function adicionaAuto(tid){
 const pop=document.getElementById("pop");
 function abrePop(alvo,e){
   if (alvo.dataset.trava){
-    const k=alvo.dataset.trava; const on=travas.has(k);
-    pop.innerHTML=`<div class="t">Trava de união</div><button class="${on?"on":""}" data-a="on">${on?"✓ ":""}${ITENS.trava.nome}<span>${brl(ITENS.trava.preco)}</span></button>`+(on?`<button data-a="off">Remover trava<span></span></button>`:"");
+    const k=alvo.dataset.trava; const on=travas.has(k); const tvp=analise.travasValidas.find(x=>x.k===k);
+    pop.innerHTML=`<div class="t">Canto entre ${tvp.q.length} módulos</div><button class="${on?"on":""}" data-a="on">${on?"✓ ":""}${ITENS["uniao"+tvp.tipo].nome}<span>${brl(ITENS["uniao"+tvp.tipo].preco)}</span></button>`+(on?`<button data-a="off">Remover presilha<span></span></button>`:"");
     pop.querySelectorAll("button").forEach(b=>b.onclick=()=>{ b.dataset.a==="on"?travas.add(k):travas.delete(k); fechaPop(); render(); });
   } else {
     const m=porUid(+alvo.dataset.uid), i=+alvo.dataset.porta, p=T[m.tid].portas[i];
@@ -937,7 +946,7 @@ function totalAtual(){
   for (const m of mods) for (const p of portasMundo(m)) if (p.item&&!p.fixo) tot+=ITENS[p.item].preco;
   analisar();
   for (const pr of analise.pares) if (duplas[pr.pk]) tot+=ITENS[duplas[pr.pk]].preco;
-  tot+=analise.travasValidas.filter(t=>t.on).length*ITENS.trava.preco;
+  for (const tv of analise.travasValidas) if (tv.on) tot+=ITENS["uniao"+tv.tipo].preco;
   for (const m of mods) if (m.capa) tot+=precoCapa(T[m.tid]);
   return tot;
 }
@@ -946,8 +955,8 @@ function precoKits(){
   for (const k of KITS){ montaKit(k); k.preco=totalAtual(); k.n=mods.length; analisar(); k.alertas=analise.alertas.length; }
   const s=JSON.parse(salvo); mods=s.mods; travas=new Set(s.travas); duplas=s.duplas; uidSeq=s.uidSeq;
 }
-function salvar(){ try{ localStorage.setItem("antsocial-formicario-v7",JSON.stringify({mods,travas:[...travas],duplas,uidSeq})); }catch(e){} }
-function carregar(){ try{ const s=JSON.parse(localStorage.getItem("antsocial-formicario-v7")); if(s&&s.mods&&s.mods.every(m=>T[m.tid])){ mods=s.mods; travas=new Set(s.travas||[]); duplas=s.duplas||{}; uidSeq=s.uidSeq||mods.length+1; return true; } }catch(e){} return false; }
+function salvar(){ try{ localStorage.setItem("antsocial-formicario-v8",JSON.stringify({mods,travas:[...travas],duplas,uidSeq})); }catch(e){} }
+function carregar(){ try{ const s=JSON.parse(localStorage.getItem("antsocial-formicario-v8")); if(s&&s.mods&&s.mods.every(m=>T[m.tid])){ mods=s.mods; travas=new Set(s.travas||[]); duplas=s.duplas||{}; uidSeq=s.uidSeq||mods.length+1; return true; } }catch(e){} return false; }
 montaCatalogo();
 if (!carregar()) exemplo();
 if (MOBILE()) mostraPainel("cat");
@@ -1146,8 +1155,18 @@ function pecaReal(item, p, fixo){
   return g;
 }
 function travaReal(s){
-  const no=PECAS.getObjectByName("trava"); if(!no) return pecaTrava(s);
-  const g=new THREE.Group(); g.position.set(s.x,0,s.y); g.rotation.y=Math.atan2(-s.dy,s.dx); g.add(clona(no,false)); return g;
+  const no=PECAS&&PECAS.getObjectByName("presilha_uniao_"+s.tipo); const g=new THREE.Group(); if(!no) return g;
+  g.position.set(s.x,0,s.y); g.rotation.y=s.ang; g.add(clona(no,false)); return g;
+}
+function presilhasSoltas(tampas){
+  const g=new THREE.Group(), no=PECAS&&PECAS.getObjectByName("presilha_tampa"); if(!no) return g;
+  const usados=new Set(); for (const tv of analise.travasValidas) if (tv.on) tv.q.forEach(q=>usados.add(q.uid+"|"+tv.k));
+  for (const m of mods){ if (!temCapa(T[m.tid])) continue; const [w,h]=dims(m), x0=m.gx*C, y0=m.gy*C;
+    for (const [cx,cy,sx,sy] of [[x0,y0,1,1],[x0+w,y0,-1,1],[x0,y0+h,1,-1],[x0+w,y0+h,-1,-1]]){
+      if (usados.has(m.uid+"|"+kp(cx,cy))) continue;
+      const p=new THREE.Group(); p.add(clona(no,false)); p.position.set(cx+sx*3.4,0,cy+sy*3.4); p.rotation.y=Math.atan2(-sy,sx)-Math.PI/4;
+      tampas.push(p); g.add(p); } }
+  return g;
 }
 async function monta3D(reenquadra){
   if (!R3) return;
@@ -1166,7 +1185,8 @@ async function monta3D(reenquadra){
   const PP=(it,p,f)=>PECAS?pecaReal(it,p,f):pecaPorta(it,p,f);
   for (const pr of analise.pares) if (duplas[pr.pk]){ raiz.add(PP(duplas[pr.pk],pr,false)); pr.pk.split("|").forEach(s=>cd.add(s)); }
   for (const m of mods) for (const p of portasMundo(m)) if (p.item && !cd.has(m.uid+":"+p.i)) raiz.add(PP(p.item,p,!!p.fixo));
-  for (const tv of analise.travasValidas) if (tv.on) raiz.add(PECAS?travaReal(tv):pecaTrava(tv));
+  for (const tv of analise.travasValidas) if (tv.on) raiz.add(travaReal(tv));
+  raiz.add(presilhasSoltas(tampas));
   const mostra=document.getElementById("c3Tampa").checked; tampas.forEach(l=>l.visible=mostra); R3.tampas=tampas;
   if (reenquadra || !enquadrado) enquadra(); enquadrado=true;
   const A=analise.alertas, nr=A.filter(a=>a.nivel==="r").length, ny=A.length-nr;
