@@ -648,7 +648,7 @@ function montaCatalogo(){
         el("rect",{x:gx+.08,y:gy+.08,width:w-.16,height:h-.16,rx:.18,fill:t.grupo==="Pré-definidos"?ic[1]:t.grupo==="Túneis"?"#c9a57b":ic[0]},s); }
       c.appendChild(s);
       const i=document.createElement("div");
-      i.innerHTML=`<div class="n">${k.nome}</div><div class="d">${k.desc}</div><div class="p">${brl(k.preco)} <span style="color:var(--suave);font-weight:700;font-size:12px">· ${k.n} módulos, tudo incluso</span></div>`;
+      i.innerHTML=`<div class="n">${k.nome}</div><div class="d">${k.desc}</div><div class="p">${brl(k.preco)} <span style="color:var(--suave);font-weight:700;font-size:12px">· ${k.n} ${k.n===1?"módulo":"módulos"}, tudo incluso</span></div>`;
       c.appendChild(i); c.onclick=()=>carregaKit(k.id); box.appendChild(c);
     }
   }
@@ -918,6 +918,8 @@ function exemplo(){
 }
 // ---------- kits prontos ----------
 const KITS = [
+  {id:"minimo", nome:"Kit Mínimo", desc:"O jeito mais barato de começar: Nest S com hidratação, adaptador para o tubo de ensaio da rainha e conexão de mangueira para um pote de forrageamento (mangueira e pote não inclusos).",
+   mods:[["nestS",2,2,0]], itens:{0:{1:"tubo_ensaio",0:"tubo"}}},
   {id:"inicial", nome:"Kit Inicial (tubo de ensaio)", desc:"Colônia recém-fundada que ainda vive no tubo: arena + 2 túneis, um com adaptador de tubo de ensaio.",
    mods:[["arena",2,1,0],["treto",2,3,0],["treto",3,3,0]], itens:{1:{0:"tubo_ensaio"}}},
   {id:"pequeno", nome:"Kit Pequeno", desc:"Até ~50 formigas: Nest S com hidratação integrada, arena e túnel. Com capa contra luz.",
