@@ -1018,7 +1018,7 @@ function init3D(){
   const ctl=new THREE.OrbitControls(cam, ren.domElement); ctl.enableDamping=true; ctl.maxPolarAngle=Math.PI*0.495;
   cena.add(new THREE.HemisphereLight(0xfffaf0,0x9c8a6c,0.62));
   const sol=new THREE.DirectionalLight(0xffffff,0.62); sol.position.set(-300,600,350); sol.castShadow=true;
-  sol.shadow.mapSize.set(TOQUE?1024:2048, TOQUE?1024:2048); const sc=sol.shadow.camera; sc.left=-700; sc.right=700; sc.top=700; sc.bottom=-700; sc.near=10; sc.far=2000; sol.shadow.bias=-0.0006;
+  sol.shadow.mapSize.set(TOQUE?2048:4096, TOQUE?2048:4096); const sc=sol.shadow.camera; sc.left=-700; sc.right=700; sc.top=700; sc.bottom=-700; sc.near=10; sc.far=2000; sol.shadow.bias=-0.0006;
   cena.add(sol); cena.add(sol.target);
   const chao=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000), new THREE.ShadowMaterial({opacity:0.16}));
   chao.rotation.x=-Math.PI/2; chao.receiveShadow=true; cena.add(chao);
@@ -1259,7 +1259,8 @@ function enquadra(topo){
   const {cx,cz,tam}=limites(), {cam,ctl,sol}=R3; const asp=cam.aspect||1.6; let d=tam*0.9+70; if (asp<1.2) d*=1.25/Math.max(asp,.45);
   ctl.target.set(cx,10,cz);
   if (topo) cam.position.set(cx,d*1.15,cz+0.01); else cam.position.set(cx-d*0.45,d*0.75,cz+d*0.85);
-  sol.position.set(cx-300,600,cz+350); sol.target.position.set(cx,0,cz); ctl.update();
+  sol.position.set(cx-300,600,cz+350); sol.target.position.set(cx,0,cz);
+  const sc=sol.shadow.camera, k=tam*0.75+80; sc.left=-k; sc.right=k; sc.top=k; sc.bottom=-k; sc.updateProjectionMatrix(); ctl.update();
 }
 document.getElementById("c3Tampa").onchange=e=>{ if(R3) R3.tampas.forEach(l=>l.visible=e.target.checked); };
 document.getElementById("b3Topo").onclick=()=>enquadra(true);
