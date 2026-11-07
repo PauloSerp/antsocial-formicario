@@ -1159,7 +1159,7 @@ function materialDo(nome, fixo){
 function clona(cena, fixo){
   const g=cena.clone(true);
   g.traverse(o=>{ if(o.isMesh){ const n=o.name||o.parent.name||""; o.material=materialDo(n,fixo);
-    if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+    if (!o.geometry.attributes.normal){ if (o.geometry.index) o.geometry=o.geometry.toNonIndexed(); o.geometry.computeVertexNormals(); }   // sem normais no arquivo: faces planas (quinas vivas)
     const vidro=n.startsWith("acr"); o.castShadow=!vidro; o.receiveShadow=!vidro; if(vidro) o.renderOrder=2; } });
   return g;
 }
